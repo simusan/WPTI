@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WPTI - 승부사 유형 테스트</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- 기본 스타일 --- */
+        body { font-family: 'Noto Sans KR', sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .container { width: 100%; max-width: 600px; background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        h1 { margin-bottom: 10px; color: #333; font-weight: 900; letter-spacing: -1px; }
+        p { color: #666; margin-bottom: 30px; line-height: 1.5; }
+        
+        /* --- 버튼 스타일 --- */
+        .btn { display: block; width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background-color: #d32f2f; color: white; box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3); }
+        .btn-primary:hover { background-color: #b71c1c; transform: translateY(-2px); }
+        
+        .answer-container { display: flex; justify-content: space-between; gap: 8px; margin-top: 40px; }
+        .btn-answer { flex: 1; padding: 15px 2px; margin: 0; background-color: #f1f3f5; color: #495057; font-size: 14px; border-radius: 8px; word-break: keep-all; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-answer:hover { background-color: #e9ecef; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        @media (max-width: 400px) { .btn-answer { font-size: 11px; padding: 12px 2px; } }
+
+        /* --- 애니메이션 --- */
+        #question-container, #result-container { display: none; }
+        .fade-out { opacity: 0; transition: opacity 0.1s ease-out; }
+        .fade-in { opacity: 1; transition: opacity 0.1s ease-in; }
+        
+        /* --- 진행바 --- */
+        .progress-bar { width: 100%; background-color: #eee; height: 6px; border-radius: 3px; margin-bottom: 40px; overflow: hidden; }
+        .progress { height: 100%; background-color: #d32f2f; width: 0%; border-radius: 3px; transition: width 0.4s ease; }
+        #question-text { font-size: 22px; font-weight: 700; color: #222; min-height: 80px; display: flex; align-items: center; justify-content: center; word-break: keep-all; }
+
+        /* --- 결과 페이지 스타일 (업그레이드) --- */
+        .result-code { font-size: 50px; font-weight: 900; color: #d32f2f; letter-spacing: 2px; margin: 20px 0 5px 0; }
+        .result-title { font-size: 24px; font-weight: 700; color: #333; margin-bottom: 10px; }
+        .result-slogan { font-size: 16px; font-style: italic; color: #666; margin-bottom: 30px; padding: 10px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        
+        /* 그래프 스타일 */
+        .chart-box { margin: 30px 0; text-align: left; }
+        .chart-row { display: flex; align-items: center; margin-bottom: 15px; font-size: 13px; color: #555; }
+        .chart-label { width: 45px; font-weight: bold; text-align: center; }
+        .chart-bar-bg { flex: 1; height: 12px; background: #e9ecef; border-radius: 6px; margin: 0 10px; overflow: hidden; display: flex; }
+        .chart-bar-fill { height: 100%; background-color: #d32f2f; width: 0%; transition: width 1s ease-out; } /* 왼쪽(붉은색) */
+        .chart-bar-empty { height: 100%; background-color: #495057; width: 0%; transition: width 1s ease-out; } /* 오른쪽(회색) */
+        
+        .result-desc-box { background-color: #f8f9fa; padding: 25px; border-radius: 15px; text-align: left; line-height: 1.7; color: #444; margin-bottom: 30px; border: 1px solid #eee; }
+        .desc-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen">
+        <h1>WPTI<br><span style="font-size:22px; font-weight:300; color:#555;">승부사 유형 테스트</span></h1>
+        <p style="margin-top:20px;">비즈니스라는 전쟁터에서<br>당신은 어떤 무기로 싸우고 있습니까?</p>
+        <p style="font-size:14px; background:#eee; display:inline-block; padding:5px 10px; border-radius:5px;">총 48문항 / 약 3분 소요</p>
+        <button class="btn btn-primary" onclick="startTest()" style="margin-top:20px;">전투력 측정 시작</button>
+    </div>
+
+    <div id="question-container" class="fade-in">
+        <div class="progress-bar"><div class="progress" id="progress"></div></div>
+        <h3 id="question-text">질문 로딩중...</h3>
+        <div class="answer-container">
+            <button class="btn btn-answer" onclick="nextQuestion(1)">전혀<br>아니다</button>
+            <button class="btn btn-answer" onclick="nextQuestion(2)">아니다</button>
+            <button class="btn btn-answer" onclick="nextQuestion(3)">보통</button>
+            <button class="btn btn-answer" onclick="nextQuestion(4)">그렇다</button>
+            <button class="btn btn-answer" onclick="nextQuestion(5)">매우<br>그렇다</button>
+        </div>
+    </div>
+
+    <div id="result-container">
+        <div style="font-size:14px; color:#888;">당신의 승부사 유형은</div>
+        <div id="result-code" class="result-code"></div> <div id="result-type" class="result-title"></div>
+        <div id="result-slogan" class="result-slogan"></div>
+
+        <div class="chart-box">
+            <div class="chart-row">
+                <div class="chart-label">공격</div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar-fill" id="bar-sk-left"></div> <div class="chart-bar-empty" id="bar-sk-right"></div> </div>
+                <div class="chart-label">수비</div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label">독단</div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar-fill" id="bar-su-left"></div>
+                    <div class="chart-bar-empty" id="bar-su-right"></div>
+                </div>
+                <div class="chart-label">연합</div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label">직관</div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar-fill" id="bar-id-left"></div>
+                    <div class="chart-bar-empty" id="bar-id-right"></div>
+                </div>
+                <div class="chart-label">데이터</div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label">결과</div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar-fill" id="bar-rp-left"></div>
+                    <div class="chart-bar-empty" id="bar-rp-right"></div>
+                </div>
+                <div class="chart-label">원칙</div>
+            </div>
+        </div>
+
+        <div class="result-desc-box">
+            <div class="desc-title">📋 유형 분석</div>
+            <div id="result-desc"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="location.reload()">다시 테스트하기</button>
+    </div>
+</div>
+
+<script>
+    /* --- 데이터 영역 (48문항 + 16유형) --- */
+    const questions = [
+        // [1영역] SK: 공격(S) vs 수비(K)
+        { text: "100% 성공하는 1억보다, 50% 확률의 10억 프로젝트가 더 끌린다.", type: "SK" },
+        { text: "경쟁자가 나타나면 피하기보다 정면 승부를 즐긴다.", type: "SK" },
+        { text: "'현상 유지'는 곧 '도태'라고 생각한다.", type: "SK" },
+        { text: "실패했을 때의 손실보다 성공했을 때의 이익을 먼저 계산한다.", type: "SK" },
+        { text: "남들이 가지 않은 길을 개척하는 것에서 희열을 느낀다.", type: "SK" },
+        { text: "안정적인 대기업보다 성장하는 스타트업이나 내 사업이 더 맞다.", type: "SK" },
+        { text: "불확실한 상황에서도 일단 저지르고 수습하는 편이다.", type: "SK" },
+        { text: "규칙을 지키는 것보다 규칙을 깨뜨려서라도 이기는 게 중요하다.", type: "SK" },
+        { text: "편안한 삶보다는 치열하고 다이내믹한 삶을 원한다.", type: "SK" },
+        { text: "리스크가 전혀 없는 투자는 시간 낭비라고 생각한다.", type: "SK" },
+        { text: "상사가 반대해도 내가 옳다고 믿으면 밀어붙인다.", type: "SK" },
+        { text: "나는 위기 상황에서 오히려 침착해지고 아드레날린이 솟는다.", type: "SK" },
+
+        // [2영역] SU: 독자(S) vs 연합(U)
+        { text: "팀으로 일할 때보다 혼자 일할 때 성과가 더 좋다.", type: "SU" },
+        { text: "멍청한 동료를 설득하느니 내가 다 해치우는 게 빠르다.", type: "SU" },
+        { text: "공을 나누는 것보다 독식하는 것이 더 달콤하다.", type: "SU" },
+        { text: "회식이나 사내 정치는 업무 능력과 무관하다고 생각한다.", type: "SU" },
+        { text: "타인의 도움을 받는 것을 빚지는 것이라 여겨 불편해한다.", type: "SU" },
+        { text: "리더가 되어 팀을 이끄는 것보다, 압도적인 에이스 실무자가 편하다.", type: "SU" },
+        { text: "내 성공의 비결을 남에게 공유하고 싶지 않다.", type: "SU" },
+        { text: "다수결로 결정하는 것은 보통 평범한 결과를 낳는다고 생각한다.", type: "SU" },
+        { text: "나는 조직에 대한 충성심보다 나의 커리어가 훨씬 중요하다.", type: "SU" },
+        { text: "동료의 실수에 대해 위로보다는 냉정한 피드백을 먼저 한다.", type: "SU" },
+        { text: "협업 툴을 쓰는 것보다 그냥 말로 하거나 내 방식대로 하는 게 편하다.", type: "SU" },
+        { text: "나는 '인맥'보다는 '실력'이 성공의 핵심이라 믿는다.", type: "SU" },
+
+        // [3영역] ID: 직관(I) vs 데이터(D)
+        { text: "엑셀 데이터보다 내 '촉'이 맞을 때가 더 많다.", type: "ID" },
+        { text: "복잡한 보고서보다는 한 장의 핵심 요약이나 구두 보고를 선호한다.", type: "ID" },
+        { text: "의사결정을 할 때 너무 많은 정보는 오히려 방해가 된다.", type: "ID" },
+        { text: "논리적으로 설명할 수는 없지만, '이거다' 싶은 느낌을 믿는다.", type: "ID" },
+        { text: "시장 조사를 완벽히 하는 것보다 일단 빨리 출시해서 반응을 본다.", type: "ID" },
+        { text: "디테일한 수치보다 전체적인 흐름과 맥락이 더 중요하다.", type: "ID" },
+        { text: "과거의 성공 데이터가 미래를 보장하지 않는다고 생각한다.", type: "ID" },
+        { text: "나는 계획을 세우기보다 상황에 맞춰 임기응변으로 대처한다.", type: "ID" },
+        { text: "사람을 뽑을 때 스펙보다 관상이나 분위기를 본다.", type: "ID" },
+        { text: "매뉴얼을 정독하기보다 일단 만져보면서 기능을 익힌다.", type: "ID" },
+        { text: "회의 시간에 근거 자료가 부족해도 자신 있게 의견을 낸다.", type: "ID" },
+        { text: "예측 불가능한 변수가 생겼을 때 더 기발한 아이디어가 나온다.", type: "ID" },
+
+        // [4영역] RP: 결과(R) vs 원칙(P)
+        { text: "과정이 아무리 훌륭해도 결과가 나쁘면 실패한 것이다.", type: "RP" },
+        { text: "경쟁에서 이기기 위해서라면 약간의 편법은 용인될 수 있다.", type: "RP" },
+        { text: "'착한 사람'이라는 평판보다 '유능한 사람'이라는 평판을 원한다.", type: "RP" },
+        { text: "약속을 했더라도 상황이 바뀌면 번복할 수 있다고 생각한다.", type: "RP" },
+        { text: "도덕성보다는 수익성이 비즈니스의 제1목표다.", type: "RP" },
+        { text: "나는 목적을 달성하기 위해 싫어하는 사람에게도 고개를 숙일 수 있다.", type: "RP" },
+        { text: "정정당당하게 졌을 때보다 치사하게라도 이겼을 때가 낫다.", type: "RP" },
+        { text: "명분이나 체면보다는 실리를 챙기는 것이 현명하다.", type: "RP" },
+        { text: "회사의 규정이 내 성과를 방해한다면 무시할 수 있다.", type: "RP" },
+        { text: "사과를 하는 것은 패배를 인정하는 것이 아니라 상황을 넘기는 스킬이다.", type: "RP" },
+        { text: "나는 '정의구현'보다는 '이익실현'에 관심이 많다.", type: "RP" },
+        { text: "세상은 결과로만 기억된다고 믿는다.", type: "RP" }
+    ];
+
+    const results = {
+        "SSIR": { title: "야생의 포식자", slogan: "약한 것은 죄다. 강한 자만이 살아남는다.", desc: "당신은 본능적인 감각으로 기회를 포착하고, 수단과 방법을 가리지 않고 쟁취하는 스타일입니다. <br><br>리스크를 두려워하지 않으며, 남들이 주저할 때 과감하게 배팅하여 판을 뒤집습니다. 당신에게 과정은 결과를 위한 도구일 뿐입니다. <br><br><b>💡 승리 전략:</b> 압도적인 힘으로 초반에 경쟁자를 제압하십시오." },
+        "SSIP": { title: "고독한 무사", slogan: "비겁하게 이기느니, 명예롭게 죽겠다.", desc: "당신은 실력은 최고지만 타협을 모르는 장인입니다. <br><br>자기만의 확고한 철학과 미학이 있으며, 남의 도움을 받기보다 혼자 해결하는 것을 선호합니다. 비겁한 승리보다는 명예로운 패배가 낫다고 생각합니다. <br><br><b>💡 승리 전략:</b> 누구도 반박할 수 없는 압도적인 퍼포먼스로 증명하십시오." },
+        "SSDR": { title: "냉철한 스나이퍼", slogan: "한 발의 총알로, 오차 없이 심장을 뚫는다.", desc: "당신은 감정에 휘둘리지 않고 철저하게 데이터와 이익만을 계산하는 전략가입니다. <br><br>조직에 기대기보다는 개인의 역량을 믿으며, 불확실한 도박보다는 확실한 승산이 있을 때만 움직입니다. <br><br><b>💡 승리 전략:</b> 약점이 보일 때까지 기다렸다가 단 한 번의 기회에 끝내십시오." },
+        "SSDP": { title: "깐깐한 장인", slogan: "내 기준에 미치지 못하면 쓰레기다.", desc: "당신은 퀄리티에 목숨 거는 타협 없는 완벽주의자입니다. <br><br>대충 빠르게 하는 것을 참을 수 없으며, 자신이 정한 높은 기준을 충족해야만 직성이 풀립니다. 남들이 보지 못하는 디테일에 집착합니다. <br><br><b>💡 승리 전략:</b> 대체 불가능한 고퀄리티 결과물로 시장을 장악하십시오." },
+        "SUIR": { title: "혁명의 붉은 왕", slogan: "역사는 승자의 기록이다.", desc: "당신은 카리스마로 사람을 홀리고, 목적 달성을 위해 조직을 도구로 쓰는 지배자입니다. <br><br>혼자 움직이기보다는 사람들을 선동하여 세력을 만들고, 그 힘을 바탕으로 판을 흔듭니다. 도덕성보다는 승리가 우선입니다. <br><br><b>💡 승리 전략:</b> 군중 심리를 이용하여 당신의 세력을 확장하십시오." },
+        "SUIP": { title: "열정의 캡틴", slogan: "우리는 할 수 있다! 끝까지 가보자!", desc: "당신은 이상적인 목표를 향해 팀을 고무시키는 리더입니다. <br><br>돈보다 '의미'와 '명분'이 중요하며, 팀원들이 지치지 않도록 끊임없이 동기를 부여합니다. 당신의 에너지는 전염성이 강합니다. <br><br><b>💡 승리 전략:</b> 팀워크와 사기 진작을 무기로 정면 돌파하십시오." },
+        "SUDR": { title: "제국 건설자", slogan: "시스템이 돈을 벌게 하라.", desc: "당신은 확장 지향적인 사업가입니다. <br><br>사람과 자본을 가장 효율적인 곳에 배치하여 판을 키우는 데 능합니다. 감정적인 호소보다는 논리적인 시스템과 보상 체계로 조직을 움직입니다. <br><br><b>💡 승리 전략:</b> M&A, 인재 영입 등 구조적인 시스템을 구축하십시오." },
+        "SUDP": { title: "정의의 사도", slogan: "바른 길이 아니면 가지 않는다.", desc: "당신은 원칙을 지키면서도 성과를 내려고 노력하는 모범적인 리더입니다. <br><br>편법을 쓰면 이길 수 있다는 것을 알지만, 그것은 옳지 않다고 생각합니다. 신뢰와 명분을 가장 중요한 자산으로 여깁니다. <br><br><b>💡 승리 전략:</b> 신뢰를 바탕으로 한 장기적인 성장을 도모하십시오." },
+        "KSIR": { title: "골목대장 생존자", slogan: "강한 놈 뒤에 숨는 것도 실력이다.", desc: "당신은 눈치가 빠르고 생존 본능이 뛰어납니다. <br><br>거대하고 위험한 시장보다는, 확실히 내가 먹을 수 있는 틈새시장을 노립니다. 상황에 따라 태세를 전환하는 유연함이 무기입니다. <br><br><b>💡 승리 전략:</b> 기회주의적 태세 전환으로 실리를 챙기십시오." },
+        "KSIP": { title: "평화로운 자연인", slogan: "이기지 않아도 괜찮아, 행복하면 됐지.", desc: "당신은 경쟁 자체를 싫어하며 평화와 안정을 사랑합니다. <br><br>치열하게 싸워서 얻는 100억보다, 마음 편한 100만 원이 낫다고 생각합니다. 스트레스를 받지 않는 것이 인생의 최대 목표입니다. <br><br><b>💡 승리 전략:</b> 욕심을 버리고 당신만의 평화로운 영역을 지키십시오." },
+        "KSDR": { title: "실속 챙기는 여우", slogan: "손해 보는 장사는 절대 안 해.", desc: "당신은 최소한의 노력으로 최대한의 안정을 찾는 가성비의 화신입니다. <br><br>무모한 도전은 하지 않으며, 철저한 손익계산 후에 안전마진이 확보되었을 때만 움직입니다. 절대 밑지는 장사는 하지 않습니다. <br><br><b>💡 승리 전략:</b> 철저한 계산을 통해 안전하게 이익을 축적하십시오." },
+        "KSDP": { title: "철벽 도서관장", slogan: "매뉴얼 3장 2조에 따르면 안 됩니다.", desc: "당신은 변화를 싫어하고 규정을 중시하는 관리자입니다. <br><br>기존의 질서와 절차가 당신을 지켜준다고 믿습니다. 융통성이 없다는 소리를 듣지만, 사고가 터지지 않게 막는 것은 당신입니다. <br><br><b>💡 승리 전략:</b> 규정과 원칙을 방패 삼아 리스크를 차단하십시오." },
+        "KUIR": { title: "웃는 얼굴의 정치인", slogan: "적을 만들지 않는 게 최고의 승리다.", desc: "당신은 모두에게 좋은 사람이지만, 속으로는 철저하게 실리를 챙깁니다. <br><br>적을 만들어 싸우기보다는, 웃는 얼굴로 협상하고 타협하여 원하는 것을 얻어냅니다. 인맥 관리가 당신의 최대 무기입니다. <br><br><b>💡 승리 전략:</b> 로비와 협상을 통해 피 흘리지 않고 승리하십시오." },
+        "KUIP": { title: "수호천사", slogan: "제가 도울게요, 우리 같이 해요.", desc: "당신은 헌신적이고 이타적인 서포터입니다. <br><br>내가 돋보이는 것보다 팀이 조화롭게 돌아가는 것이 중요합니다. 갈등을 중재하고 동료를 도움으로써 자신의 가치를 증명합니다. <br><br><b>💡 승리 전략:</b> 타인의 성장을 도우며 대체 불가능한 존재가 되십시오." },
+        "KUDR": { title: "시스템 관리자", slogan: "예측 가능한 범위 내에서 움직이십시오.", desc: "당신은 조직의 안 살림을 책임지는 관리자입니다. <br><br>리스크를 극도로 싫어하며, 모든 것이 예측 가능한 범위 내에서 돌아가야 직성이 풀립니다. 사고를 예방하고 효율을 높이는 데 능합니다. <br><br><b>💡 승리 전략:</b> 운영의 최적화를 통해 조직의 안정성을 확보하십시오." },
+        "KUDP": { title: "충직한 집사", slogan: "주인님이(회사가) 까라면 깝니다.", desc: "당신은 조직의 질서와 위계를 최우선으로 생각합니다. <br><br>개인의 판단보다는 상사의 지시나 회사의 방침을 따르는 것이 안전하다고 믿습니다. 충성심이 강하며 궂은일도 마다하지 않습니다. <br><br><b>💡 승리 전략:</b> 권력자에게 충성하여 조직 내 입지를 다지십시오." }
+    };
+
+    /* --- 로직 영역 --- */
+    let currentQ = 0;
+    let scores = { SK: 0, SU: 0, ID: 0, RP: 0 }; // 각 항목당 최대 60점 (12문항 * 5점), 최소 12점
+    const questionContainer = document.getElementById("question-container");
+
+    function startTest() {
+        document.getElementById("start-screen").style.display = "none";
+        questionContainer.style.display = "block";
+        showQuestion();
+    }
+
+    function showQuestion() {
+        document.getElementById("progress").style.width = ((currentQ / questions.length) * 100) + "%";
+        document.getElementById("question-text").innerText = questions[currentQ].text;
+        questionContainer.classList.remove("fade-out");
+        questionContainer.classList.add("fade-in");
+    }
+
+    function nextQuestion(score) {
+        questionContainer.classList.remove("fade-in");
+        questionContainer.classList.add("fade-out");
+
+        setTimeout(() => {
+            let type = questions[currentQ].type;
+            scores[type] += score; // 1~5점 누적
+
+            currentQ++;
+            if (currentQ < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 200);
+    }
+
+    function showResult() {
+        questionContainer.style.display = "none";
+        document.getElementById("result-container").style.display = "block";
+
+        // 결과 계산 (중간값 36점 기준)
+        // 범위: 최소 12점 ~ 최대 60점. 중앙값 36점.
+        // 점수가 높으면 앞글자(S, S, I, R) 성향
+        
+        let mbti = "";
+        mbti += scores.SK > 36 ? "S" : "K";
+        mbti += scores.SU > 36 ? "S" : "U";
+        mbti += scores.ID > 36 ? "I" : "D";
+        mbti += scores.RP > 36 ? "R" : "P";
+
+        let result = results[mbti] || { title: "분석 오류", slogan: "", desc: "" };
+
+        // 텍스트 매핑
+        document.getElementById("result-code").innerText = mbti;
+        document.getElementById("result-type").innerText = result.title;
+        document.getElementById("result-slogan").innerText = `"${result.slogan}"`;
+        document.getElementById("result-desc").innerHTML = result.desc; // HTML 태그 적용을 위해 innerHTML 사용
+
+        // 그래프 그리기 (비율 계산)
+        // 점수(12~60)를 0~100% 비율로 변환
+        // 공식: (점수 - 12) / 48 * 100
+        function calcPercent(score) {
+            let p = ((score - 12) / 48) * 100;
+            return Math.min(100, Math.max(0, p)); // 0~100 제한
+        }
+
+        let pSK = calcPercent(scores.SK);
+        let pSU = calcPercent(scores.SU);
+        let pID = calcPercent(scores.ID);
+        let pRP = calcPercent(scores.RP);
+
+        // 그래프 애니메이션 적용
+        setTimeout(() => {
+            document.getElementById("bar-sk-left").style.width = pSK + "%";
+            document.getElementById("bar-sk-right").style.width = (100 - pSK) + "%";
+
+            document.getElementById("bar-su-left").style.width = pSU + "%";
+            document.getElementById("bar-su-right").style.width = (100 - pSU) + "%";
+
+            document.getElementById("bar-id-left").style.width = pID + "%";
+            document.getElementById("bar-id-right").style.width = (100 - pID) + "%";
+
+            document.getElementById("bar-rp-left").style.width = pRP + "%";
+            document.getElementById("bar-rp-right").style.width = (100 - pRP) + "%";
+        }, 300);
+    }
+</script>
+
+</body>
+</html>
